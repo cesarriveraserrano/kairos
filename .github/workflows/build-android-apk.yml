@@ -74,4 +74,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: KAIROS_v0.3_APK
-          path: artifact_output/KAIROS.apk
+          path: artifact_output/KAIROS_v0.3.apk
