@@ -1,0 +1,77 @@
+name: Build KAIRÓS Android APK from split ZIP
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: 'stable'
+
+      - name: Instalar unzip
+        run: sudo apt-get update && sudo apt-get install -y unzip
+
+      - name: Reconstruir ZIP original
+        run: |
+          cat kairos_v03.zip.part* > kairos_android_app_v03_tabs_cartas_dados.zip
+          ls -lh kairos_android_app_v03_tabs_cartas_dados.zip
+
+      - name: Descomprimir proyecto KAIRÓS
+        run: |
+          mkdir extracted
+          unzip kairos_android_app_v03_tabs_cartas_dados.zip -d extracted
+          echo "Contenido descomprimido:"
+          find extracted -maxdepth 3 -type f | head -50
+
+      - name: Encontrar carpeta Flutter
+        run: |
+          PUBSPEC_PATH=$(find extracted -name pubspec.yaml | head -n 1)
+          if [ -z "$PUBSPEC_PATH" ]; then
+            echo "No se encontró pubspec.yaml"
+            exit 1
+          fi
+          PROJECT_DIR=$(dirname "$PUBSPEC_PATH")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+          echo "Proyecto encontrado en: $PROJECT_DIR"
+
+      - name: Verificar Flutter
+        run: flutter --version
+
+      - name: Crear estructura Android si no existe
+        run: |
+          cd "$PROJECT_DIR"
+          flutter create --platforms=android .
+
+      - name: Descargar dependencias
+        run: |
+          cd "$PROJECT_DIR"
+          flutter pub get
+
+      - name: Compilar APK release
+        run: |
+          cd "$PROJECT_DIR"
+          flutter build apk --release
+
+      - name: Preparar APK
+        run: |
+          mkdir -p artifact_output
+          cp "$PROJECT_DIR/build/app/outputs/flutter-apk/app-release.apk" artifact_output/KAIROS_v0.3.apk
+
+      - name: Subir APK como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: KAIROS_v0.3_APK
+          path: artifact_output/KAIROS.apk
