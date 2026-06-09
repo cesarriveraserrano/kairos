@@ -18,8 +18,8 @@ jobs:
       - name: Instalar Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
-          channel: 'stable'
+          flutter-version: "3.24.5"
+          channel: "stable"
 
       - name: Instalar unzip
         run: sudo apt-get update && sudo apt-get install -y unzip
@@ -28,16 +28,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release download v0.3-assets \
-            --pattern "kairos_android_app_v03_tabs_cartas_dados.zip" \
-            --dir .
-
+          gh release download v0.3-assets --pattern "kairos_android_app_v03_tabs_cartas_dados.zip" --dir .
           echo "Archivos descargados:"
           ls -lh
 
       - name: Descomprimir proyecto KAIRÓS
         run: |
-          mkdir extracted
+          mkdir -p extracted
           unzip kairos_android_app_v03_tabs_cartas_dados.zip -d extracted
           echo "Contenido descomprimido:"
           find extracted -maxdepth 4 -type f | head -80
