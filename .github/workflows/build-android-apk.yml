@@ -84,3 +84,6 @@ jobs:
         with:
           name: KAIROS_v0.3_APK
           path: artifact_output/KAIROS_v0.3.apk
+        with:
+          name: KAIROS_v0.3_APK
+          path: artifact_output/KAIROS_v0.3.apk
