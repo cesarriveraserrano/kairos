@@ -1,10 +1,10 @@
-name: Build KAIRÓS Android APK from split ZIP
+name: Build KAIRÓS Android APK from Release ZIP
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
+
+permissions:
+  contents: read
 
 jobs:
   build-apk:
@@ -15,11 +15,6 @@ jobs:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
-      - name: Mostrar archivos del repositorio
-        run: |
-          echo "Archivos encontrados:"
-          find . -maxdepth 5 -type f | sort
-
       - name: Instalar Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -29,25 +24,16 @@ jobs:
       - name: Instalar unzip
         run: sudo apt-get update && sudo apt-get install -y unzip
 
-      - name: Reconstruir ZIP original
+      - name: Descargar ZIP desde Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Buscando partes del ZIP..."
-          PARTS=$(find . -type f -name "kairos_v03.zip.part*" | sort)
+          gh release download v0.3-assets \
+            --pattern "kairos_android_app_v03_tabs_cartas_dados.zip" \
+            --dir .
 
-          if [ -z "$PARTS" ]; then
-            echo "ERROR: No se encontraron partes kairos_v03.zip.part*"
-            echo "Listado completo de archivos:"
-            find . -maxdepth 6 -type f | sort
-            exit 1
-          fi
-
-          echo "Partes encontradas:"
-          echo "$PARTS"
-
-          cat $PARTS > kairos_android_app_v03_tabs_cartas_dados.zip
-
-          echo "ZIP reconstruido:"
-          ls -lh kairos_android_app_v03_tabs_cartas_dados.zip
+          echo "Archivos descargados:"
+          ls -lh
 
       - name: Descomprimir proyecto KAIRÓS
         run: |
@@ -96,5 +82,5 @@ jobs:
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: KAIROS
-          path: artifact_output/KAIROS.apk
+          name: KAIROS_v0.3_APK
+          path: artifact_output/KAIROS_v0.3.apk
