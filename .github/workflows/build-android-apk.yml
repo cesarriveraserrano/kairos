@@ -15,6 +15,11 @@ jobs:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
+      - name: Mostrar archivos del repositorio
+        run: |
+          echo "Archivos encontrados:"
+          find . -maxdepth 5 -type f | sort
+
       - name: Instalar Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -26,7 +31,22 @@ jobs:
 
       - name: Reconstruir ZIP original
         run: |
-          cat kairos_v03.zip.part* > kairos_android_app_v03_tabs_cartas_dados.zip
+          echo "Buscando partes del ZIP..."
+          PARTS=$(find . -type f -name "kairos_v03.zip.part*" | sort)
+
+          if [ -z "$PARTS" ]; then
+            echo "ERROR: No se encontraron partes kairos_v03.zip.part*"
+            echo "Listado completo de archivos:"
+            find . -maxdepth 6 -type f | sort
+            exit 1
+          fi
+
+          echo "Partes encontradas:"
+          echo "$PARTS"
+
+          cat $PARTS > kairos_android_app_v03_tabs_cartas_dados.zip
+
+          echo "ZIP reconstruido:"
           ls -lh kairos_android_app_v03_tabs_cartas_dados.zip
 
       - name: Descomprimir proyecto KAIRÓS
@@ -34,18 +54,21 @@ jobs:
           mkdir extracted
           unzip kairos_android_app_v03_tabs_cartas_dados.zip -d extracted
           echo "Contenido descomprimido:"
-          find extracted -maxdepth 3 -type f | head -50
+          find extracted -maxdepth 4 -type f | head -80
 
       - name: Encontrar carpeta Flutter
         run: |
           PUBSPEC_PATH=$(find extracted -name pubspec.yaml | head -n 1)
+
           if [ -z "$PUBSPEC_PATH" ]; then
-            echo "No se encontró pubspec.yaml"
+            echo "ERROR: No se encontró pubspec.yaml"
+            find extracted -maxdepth 6 -type f | sort
             exit 1
           fi
+
           PROJECT_DIR=$(dirname "$PUBSPEC_PATH")
           echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
-          echo "Proyecto encontrado en: $PROJECT_DIR"
+          echo "Proyecto Flutter encontrado en: $PROJECT_DIR"
 
       - name: Verificar Flutter
         run: flutter --version
@@ -73,5 +96,5 @@ jobs:
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: KAIROS_v0.3_APK
-          path: artifact_output/KAIROS_v0.3.apk
+          name: KAIROS
+          path: artifact_output/KAIROS.apk
