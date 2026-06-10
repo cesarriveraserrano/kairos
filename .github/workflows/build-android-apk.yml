@@ -1,4 +1,4 @@
-name: Build KAIRÓS Android APK from Release ZIP
+name: Build KAIRÓS Android APK from Release parts
 
 on:
   workflow_dispatch:
@@ -21,21 +21,30 @@ jobs:
           flutter-version: "3.24.5"
           channel: "stable"
 
-      - name: Instalar unzip
+      - name: Instalar herramientas
         run: sudo apt-get update && sudo apt-get install -y unzip
 
-      - name: Descargar ZIP desde Release
+      - name: Descargar partes desde Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release download v0.3-assets --pattern "kairos_android_app_v03_tabs_cartas_dados.zip" --dir .
-          echo "Archivos descargados:"
-          ls -lh
+          gh release download v0.4-assets \
+            --pattern "kairos_v04.zip.part*" \
+            --dir .
+
+          echo "Partes descargadas:"
+          ls -lh kairos_v04.zip.part*
+
+      - name: Unir partes del ZIP
+        run: |
+          cat kairos_v04.zip.part* > kairos_android_app_v04_mapa_dado_kairos.zip
+          echo "ZIP reconstruido:"
+          ls -lh kairos_android_app_v04_mapa_dado_kairos.zip
 
       - name: Descomprimir proyecto KAIRÓS
         run: |
           mkdir -p extracted
-          unzip kairos_android_app_v03_tabs_cartas_dados.zip -d extracted
+          unzip kairos_android_app_v04_mapa_dado_kairos.zip -d extracted
           echo "Contenido descomprimido:"
           find extracted -maxdepth 4 -type f | head -80
 
@@ -74,8 +83,13 @@ jobs:
       - name: Preparar APK
         run: |
           mkdir -p artifact_output
-          cp "$PROJECT_DIR/build/app/outputs/flutter-apk/app-release.apk" artifact_output/KAIROS_v0.3.apk
+          cp "$PROJECT_DIR/build/app/outputs/flutter-apk/app-release.apk" artifact_output/KAIROS_v0.4.apk
 
+      - name: Subir APK como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: KAIROS
+          path: artifact_output/KAIROS.apk
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
