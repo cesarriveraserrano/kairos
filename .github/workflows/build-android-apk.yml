@@ -1,4 +1,4 @@
-name: Build KAIRÓS Android APK from Release parts
+name: Build KAIRÓS Android APK from latest Release parts
 
 on:
   workflow_dispatch:
@@ -24,16 +24,44 @@ jobs:
       - name: Instalar herramientas
         run: sudo apt-get update && sudo apt-get install -y unzip
 
-      - name: Descargar partes desde Release
+      - name: Mostrar releases disponibles
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release download v0.4-assets \
+          echo "Releases disponibles:"
+          gh release list
+
+      - name: Descargar partes desde el último Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
+
+          if [ -z "$LATEST_TAG" ]; then
+            echo "ERROR: No existe ningún Release publicado."
+            exit 1
+          fi
+
+          echo "Último Release detectado: $LATEST_TAG"
+
+          gh release download "$LATEST_TAG" \
             --pattern "kairos_v04.zip.part*" \
             --dir .
 
           echo "Partes descargadas:"
           ls -lh kairos_v04.zip.part*
+
+      - name: Verificar cantidad de partes
+        run: |
+          COUNT=$(ls kairos_v04.zip.part* 2>/dev/null | wc -l)
+
+          echo "Cantidad de partes encontradas: $COUNT"
+
+          if [ "$COUNT" -lt 10 ]; then
+            echo "ERROR: Faltan partes. Deben estar part00 a part09."
+            ls -lh
+            exit 1
+          fi
 
       - name: Unir partes del ZIP
         run: |
@@ -88,10 +116,5 @@ jobs:
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: KAIROS
-          path: artifact_output/KAIROS.apk
-      - name: Subir APK como artefacto
-        uses: actions/upload-artifact@v4
-        with:
-          name: KAIROS_v0.3_APK
-          path: artifact_output/KAIROS_v0.3.apk
+          name: KAIROS_v0.4_APK
+          path: artifact_output/KAIROS_v0.4.apk
