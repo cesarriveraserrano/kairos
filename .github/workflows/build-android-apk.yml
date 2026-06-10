@@ -1,4 +1,4 @@
-name: Build KAIRÓS Android APK from latest Release parts
+name: Build KAIRÓS Android APK FIX1
 
 on:
   workflow_dispatch:
@@ -29,31 +29,22 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Releases disponibles:"
-          gh release list
+          gh release list --limit 20
 
-      - name: Descargar partes desde el último Release
+      - name: Descargar partes FIX1 desde Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
-
-          if [ -z "$LATEST_TAG" ]; then
-            echo "ERROR: No existe ningún Release publicado."
-            exit 1
-          fi
-
-          echo "Último Release detectado: $LATEST_TAG"
-
-          gh release download "$LATEST_TAG" \
-            --pattern "kairos_v04.zip.part*" \
+          gh release download v0.4-assets \
+            --pattern "kairos_v04_fix1.zip.part*" \
             --dir .
 
           echo "Partes descargadas:"
-          ls -lh kairos_v04.zip.part*
+          ls -lh kairos_v04_fix1.zip.part*
 
       - name: Verificar cantidad de partes
         run: |
-          COUNT=$(ls kairos_v04.zip.part* 2>/dev/null | wc -l)
+          COUNT=$(ls kairos_v04_fix1.zip.part* 2>/dev/null | wc -l)
 
           echo "Cantidad de partes encontradas: $COUNT"
 
@@ -63,16 +54,16 @@ jobs:
             exit 1
           fi
 
-      - name: Unir partes del ZIP
+      - name: Unir partes del ZIP FIX1
         run: |
-          cat kairos_v04.zip.part* > kairos_android_app_v04_mapa_dado_kairos.zip
+          cat kairos_v04_fix1.zip.part* > kairos_android_app_v04_mapa_dado_kairos_FIX1.zip
           echo "ZIP reconstruido:"
-          ls -lh kairos_android_app_v04_mapa_dado_kairos.zip
+          ls -lh kairos_android_app_v04_mapa_dado_kairos_FIX1.zip
 
       - name: Descomprimir proyecto KAIRÓS
         run: |
           mkdir -p extracted
-          unzip kairos_android_app_v04_mapa_dado_kairos.zip -d extracted
+          unzip kairos_android_app_v04_mapa_dado_kairos_FIX1.zip -d extracted
           echo "Contenido descomprimido:"
           find extracted -maxdepth 4 -type f | head -80
 
@@ -111,10 +102,10 @@ jobs:
       - name: Preparar APK
         run: |
           mkdir -p artifact_output
-          cp "$PROJECT_DIR/build/app/outputs/flutter-apk/app-release.apk" artifact_output/KAIROS_v0.4.apk
+          cp "$PROJECT_DIR/build/app/outputs/flutter-apk/app-release.apk" artifact_output/KAIROS_v0.4_FIX1.apk
 
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: KAIROS_v0.4_APK
-          path: artifact_output/KAIROS_v0.4.apk
+          name: KAIROS_v0.4_FIX1_APK
+          path: artifact_output/KAIROS_v0.4_FIX1.apk
